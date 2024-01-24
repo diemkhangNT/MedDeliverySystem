@@ -1,0 +1,15 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "AzureWebJobsDashboard": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "dotnet",
+    "ServiceBusConnection": "Endpoint=sb://cloud-medication-dilivery-messaging.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=6mujeHodtZVJkFdTu5OZEXN4b7tACYeUD+ASbAobkFs="
+  },
+  "ConnectionStrings": {
+    "DefaultConnection": "Data Source=INTERN-NTDKHANG\\SQLEXPRESS;Initial Catalog=pharmacy-db-local;Integrated Security=True;Trusted_Connection=SSPI;Encrypt=false;TrustServerCertificate=true"
+  },
+  "Host": {
+    "CORS": "*"
+  }
+}

@@ -1,0 +1,164 @@
+# ASP.NET Core (.NET Framework)
+# Build and test ASP.NET Core projects targeting the full .NET Framework.
+# Add steps that publish symbols, save build artifacts, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/languages/dotnet-core
+
+trigger:
+    branches:
+     include:
+     - master
+
+variables:
+  buildPlatform: 'Any CPU'
+  buildConfiguration: 'Release'
+  dotNetFramework: 'net6.0'
+  targetRuntime: 'linux-x64'
+
+stages:
+- stage: Continuous_Integration
+  displayName: Build
+  pool: pcinternlocal
+
+  jobs:
+  - job: Build
+    cancelTimeoutInMinutes: 1
+    steps:
+    - checkout: self
+      clean: true
+    
+    - task: NuGetToolInstaller@1
+      inputs:
+        versionSpec: '6.4.0'
+
+    - task: NuGetCommand@2
+      displayName: NuGet restore
+      inputs:
+        command: 'restore'
+
+    - task: VSBuild@1
+      displayName: Build solution
+      inputs:
+        solution: '**\*.sln'
+        msbuildArgs: '/p:DeployOnBuild=true /p:WebPublishMethod=Package /p:PackageAsSingleFile=true /p:PackageLocation="$(Build.ArtifactStagingDirectory)\\"'
+        platform: $(buildPlatform)
+        configuration: $(buildConfiguration)
+
+    - task: VSTest@2
+      displayName: Run UnitTest
+      inputs:
+        testSelector: 'testAssemblies'
+        testAssemblyVer2: |
+          **\*tests*.dll
+          !**\*TestAdapter.dll
+          !**\obj\**
+          !**\bin\**\ref\**
+        searchFolder: '$(System.DefaultWorkingDirectory)'
+        resultsFolder: '$(Common.TestResultDirectory)'
+        runTestsInIsolation: true
+        codeCoverageEnabled: true
+        platform: '$(BuildPlatform)'
+        configuration: '$(BuildConfiguration)'
+       
+    - task: DotNetCoreCLI@2
+      inputs:
+        command: 'publish'
+        publishWebProjects: false
+        projects: '**/Pharmacy.API.csproj'
+        arguments: 
+          --configuration $(BuildConfiguration)
+          --output $(Build.ArtifactStagingDirectory)
+        modifyOutputPath: false
+        zipAfterPublish: true
+
+    - task: PublishBuildArtifacts@1
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+        ArtifactName: 'drop'
+
+- stage: Continuous_Deployment_Development
+  displayName: Development
+  dependsOn: Continuous_Integration
+  condition: succeeded('Continuous_Integration')
+  jobs:
+    - deployment: Development
+      displayName: Development
+      pool: pcinternlocal
+      environment: 'Development'
+      strategy: 
+        runOnce:
+          deploy:
+            steps:
+            - task: DownloadBuildArtifacts@0
+              inputs:
+                buildType: 'current'
+                downloadType: 'single'
+                artifactName: 'drop'
+                downloadPath: '$(System.DefaultWorkingDirectory)'
+                cleanDestinationFolder: true
+
+            - task: AzureRmWebAppDeployment@4
+              inputs:
+                ConnectionType: 'AzureRM'
+                azureSubscription: 'Azure supscription 1 - Student Account'
+                appType: 'webAppLinux'
+                WebAppName: 'PharmacyQueryApi'
+                deployToSlotOrASE: true
+                ResourceGroupName: 'CloudMedicationOrderSystem'
+                SlotName: 'dev'
+                packageForLinux: '$(System.DefaultWorkingDirectory)/**/*.zip'
+                StartupCommand: 'dotnet Pharmacy.API.dll'
+                AppSettings: '-ASPNETCORE_ENVIRONMENT Development'
+
+- stage: Continuous_Deployment_Staging
+  displayName: Staging
+  dependsOn: Continuous_Deployment_Development
+  condition: succeeded('Continuous_Deployment_Development')
+  jobs:
+    - deployment: Staging
+      displayName: Staging
+      pool: pcinternlocal          
+      environment: 'Staging'
+      strategy: 
+        runOnce:
+          deploy:
+            steps:           
+            - task: AzureRmWebAppDeployment@4
+              inputs:
+                ConnectionType: 'AzureRM'
+                azureSubscription: 'Azure supscription 1 - Student Account'
+                appType: 'webAppLinux'
+                WebAppName: 'PharmacyQueryApi'
+                deployToSlotOrASE: true
+                ResourceGroupName: 'CloudMedicationOrderSystem'
+                SlotName: 'staging'
+                packageForLinux: '$(System.DefaultWorkingDirectory)/**/*.zip'
+                RuntimeStack: 'DOTNETCORE|6.0'
+                StartupCommand: 'dotnet Pharmacy.API.dll'
+                AppSettings: '-ASPNETCORE_ENVIRONMENT Staging'
+
+- stage: Continuous_Deployment_Production
+  displayName: Production
+  dependsOn: Continuous_Deployment_Staging
+  condition: succeeded('Continuous_Deployment_Staging')
+  jobs:
+    - deployment: Production
+      displayName: Production
+      pool: pcinternlocal      
+      environment: 'Production'
+      strategy: 
+        runOnce:
+          deploy:
+            steps:  
+            - task: AzureRmWebAppDeployment@4
+              inputs:
+                ConnectionType: 'AzureRM'
+                azureSubscription: 'Azure supscription 1 - Student Account'
+                appType: 'webAppLinux'
+                WebAppName: 'PharmacyQueryApi'
+                deployToSlotOrASE: true
+                ResourceGroupName: 'CloudMedicationOrderSystem'
+                SlotName: 'prod'
+                packageForLinux: '$(System.DefaultWorkingDirectory)/**/*.zip'
+                RuntimeStack: 'DOTNETCORE|6.0'
+                StartupCommand: 'dotnet Pharmacy.API.dll'
+                AppSettings: '-ASPNETCORE_ENVIRONMENT Production'

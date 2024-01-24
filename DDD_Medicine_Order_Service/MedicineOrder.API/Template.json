@@ -1,0 +1,1554 @@
+﻿{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "vulnerabilityAssessments_Default_storageContainerPath": {
+      "type": "SecureString"
+    },
+    "sites_MedicineOrderService_name": {
+      "defaultValue": "MedicineOrderService",
+      "type": "String"
+    },
+    "servers_medicineorderdbserver_name": {
+      "defaultValue": "medicineorderdbserver",
+      "type": "String"
+    },
+    "components_MedicineOrderService_name": {
+      "defaultValue": "MedicineOrderService",
+      "type": "String"
+    },
+    "serverfarms_ASP_CloudMedicineOrderService_bd22_name": {
+      "defaultValue": "ASP-CloudMedicineOrderService-bd22",
+      "type": "String"
+    },
+    "actionGroups_Application_Insights_Smart_Detection_name": {
+      "defaultValue": "Application Insights Smart Detection",
+      "type": "String"
+    },
+    "smartdetectoralertrules_failure_anomalies___medicineorderservice_name": {
+      "defaultValue": "failure anomalies - medicineorderservice",
+      "type": "String"
+    },
+    "workspaces_DefaultWorkspace_f3a37119_045d_40eb_a353_e7cc14948380_SEA_externalid": {
+      "defaultValue": "/subscriptions/f3a37119-045d-40eb-a353-e7cc14948380/resourceGroups/DefaultResourceGroup-SEA/providers/Microsoft.OperationalInsights/workspaces/DefaultWorkspace-f3a37119-045d-40eb-a353-e7cc14948380-SEA",
+      "type": "String"
+    }
+  },
+  "variables": {},
+  "resources": [
+    {
+      "type": "microsoft.insights/actionGroups",
+      "apiVersion": "2023-01-01",
+      "name": "[parameters('actionGroups_Application_Insights_Smart_Detection_name')]",
+      "location": "Global",
+      "properties": {
+        "groupShortName": "SmartDetect",
+        "enabled": true,
+        "emailReceivers": [],
+        "smsReceivers": [],
+        "webhookReceivers": [],
+        "eventHubReceivers": [],
+        "itsmReceivers": [],
+        "azureAppPushReceivers": [],
+        "automationRunbookReceivers": [],
+        "voiceReceivers": [],
+        "logicAppReceivers": [],
+        "azureFunctionReceivers": [],
+        "armRoleReceivers": [
+          {
+            "name": "Monitoring Contributor",
+            "roleId": "749f88d5-cbae-40b8-bcfc-e573ddc772fa",
+            "useCommonAlertSchema": true
+          },
+          {
+            "name": "Monitoring Reader",
+            "roleId": "43d0d8ad-25c7-4714-9337-8ba259a9fe05",
+            "useCommonAlertSchema": true
+          }
+        ]
+      }
+    },
+    {
+      "type": "microsoft.insights/components",
+      "apiVersion": "2020-02-02",
+      "name": "[parameters('components_MedicineOrderService_name')]",
+      "location": "southeastasia",
+      "kind": "web",
+      "properties": {
+        "Application_Type": "web",
+        "Flow_Type": "Redfield",
+        "Request_Source": "IbizaWebAppExtensionCreate",
+        "RetentionInDays": 90,
+        "WorkspaceResourceId": "[parameters('workspaces_DefaultWorkspace_f3a37119_045d_40eb_a353_e7cc14948380_SEA_externalid')]",
+        "IngestionMode": "LogAnalytics",
+        "publicNetworkAccessForIngestion": "Enabled",
+        "publicNetworkAccessForQuery": "Enabled"
+      }
+    },
+    {
+      "type": "Microsoft.Sql/servers",
+      "apiVersion": "2023-05-01-preview",
+      "name": "[parameters('servers_medicineorderdbserver_name')]",
+      "location": "southeastasia",
+      "kind": "v12.0",
+      "properties": {
+        "administratorLogin": "diemkhangNT",
+        "version": "12.0",
+        "minimalTlsVersion": "1.2",
+        "publicNetworkAccess": "Enabled",
+        "restrictOutboundNetworkAccess": "Disabled"
+      }
+    },
+    {
+      "type": "Microsoft.Web/serverfarms",
+      "apiVersion": "2023-01-01",
+      "name": "[parameters('serverfarms_ASP_CloudMedicineOrderService_bd22_name')]",
+      "location": "Southeast Asia",
+      "sku": {
+        "name": "S1",
+        "tier": "Standard",
+        "size": "S1",
+        "family": "S",
+        "capacity": 1
+      },
+      "kind": "app",
+      "properties": {
+        "perSiteScaling": false,
+        "elasticScaleEnabled": false,
+        "maximumElasticWorkerCount": 1,
+        "isSpot": false,
+        "reserved": false,
+        "isXenon": false,
+        "hyperV": false,
+        "targetWorkerCount": 0,
+        "targetWorkerSizeId": 0,
+        "zoneRedundant": false
+      }
+    },
+    {
+      "type": "microsoft.insights/components/ProactiveDetectionConfigs",
+      "apiVersion": "2018-05-01-preview",
+      "name": "[concat(parameters('components_MedicineOrderService_name'), '/degradationindependencyduration')]",
+      "location": "southeastasia",
+      "dependsOn": [
+        "[resourceId('microsoft.insights/components', parameters('components_MedicineOrderService_name'))]"
+      ],
+      "properties": {
+        "ruleDefinitions": {
+          "Name": "degradationindependencyduration",
+          "DisplayName": "Degradation in dependency duration",
+          "Description": "Smart Detection rules notify you of performance anomaly issues.",
+          "HelpUrl": "https://docs.microsoft.com/en-us/azure/application-insights/app-insights-proactive-performance-diagnostics",
+          "IsHidden": false,
+          "IsEnabledByDefault": true,
+          "IsInPreview": false,
+          "SupportsEmailNotifications": true
+        },
+        "enabled": true,
+        "sendEmailsToSubscriptionOwners": true,
+        "customEmails": []
+      }
+    },
+    {
+      "type": "microsoft.insights/components/ProactiveDetectionConfigs",
+      "apiVersion": "2018-05-01-preview",
+      "name": "[concat(parameters('components_MedicineOrderService_name'), '/degradationinserverresponsetime')]",
+      "location": "southeastasia",
+      "dependsOn": [
+        "[resourceId('microsoft.insights/components', parameters('components_MedicineOrderService_name'))]"
+      ],
+      "properties": {
+        "ruleDefinitions": {
+          "Name": "degradationinserverresponsetime",
+          "DisplayName": "Degradation in server response time",
+          "Description": "Smart Detection rules notify you of performance anomaly issues.",
+          "HelpUrl": "https://docs.microsoft.com/en-us/azure/application-insights/app-insights-proactive-performance-diagnostics",
+          "IsHidden": false,
+          "IsEnabledByDefault": true,
+          "IsInPreview": false,
+          "SupportsEmailNotifications": true
+        },
+        "enabled": true,
+        "sendEmailsToSubscriptionOwners": true,
+        "customEmails": []
+      }
+    },
+    {
+      "type": "microsoft.insights/components/ProactiveDetectionConfigs",
+      "apiVersion": "2018-05-01-preview",
+      "name": "[concat(parameters('components_MedicineOrderService_name'), '/digestMailConfiguration')]",
+      "location": "southeastasia",
+      "dependsOn": [
+        "[resourceId('microsoft.insights/components', parameters('components_MedicineOrderService_name'))]"
+      ],
+      "properties": {
+        "ruleDefinitions": {
+          "Name": "digestMailConfiguration",
+          "DisplayName": "Digest Mail Configuration",
+          "Description": "This rule describes the digest mail preferences",
+          "HelpUrl": "www.homail.com",
+          "IsHidden": true,
+          "IsEnabledByDefault": true,
+          "IsInPreview": false,
+          "SupportsEmailNotifications": true
+        },
+        "enabled": true,
+        "sendEmailsToSubscriptionOwners": true,
+        "customEmails": []
+      }
+    },
+    {
+      "type": "microsoft.insights/components/ProactiveDetectionConfigs",
+      "apiVersion": "2018-05-01-preview",
+      "name": "[concat(parameters('components_MedicineOrderService_name'), '/extension_billingdatavolumedailyspikeextension')]",
+      "location": "southeastasia",
+      "dependsOn": [
+        "[resourceId('microsoft.insights/components', parameters('components_MedicineOrderService_name'))]"
+      ],
+      "properties": {
+        "ruleDefinitions": {
+          "Name": "extension_billingdatavolumedailyspikeextension",
+          "DisplayName": "Abnormal rise in daily data volume (preview)",
+          "Description": "This detection rule automatically analyzes the billing data generated by your application, and can warn you about an unusual increase in your application's billing costs",
+          "HelpUrl": "https://github.com/Microsoft/ApplicationInsights-Home/tree/master/SmartDetection/billing-data-volume-daily-spike.md",
+          "IsHidden": false,
+          "IsEnabledByDefault": true,
+          "IsInPreview": true,
+          "SupportsEmailNotifications": false
+        },
+        "enabled": true,
+        "sendEmailsToSubscriptionOwners": true,
+        "customEmails": []
+      }
+    },
+    {
+      "type": "microsoft.insights/components/ProactiveDetectionConfigs",
+      "apiVersion": "2018-05-01-preview",
+      "name": "[concat(parameters('components_MedicineOrderService_name'), '/extension_canaryextension')]",
+      "location": "southeastasia",
+      "dependsOn": [
+        "[resourceId('microsoft.insights/components', parameters('components_MedicineOrderService_name'))]"
+      ],
+      "properties": {
+        "ruleDefinitions": {
+          "Name": "extension_canaryextension",
+          "DisplayName": "Canary extension",
+          "Description": "Canary extension",
+          "HelpUrl": "https://github.com/Microsoft/ApplicationInsights-Home/blob/master/SmartDetection/",
+          "IsHidden": true,
+          "IsEnabledByDefault": true,
+          "IsInPreview": true,
+          "SupportsEmailNotifications": false
+        },
+        "enabled": true,
+        "sendEmailsToSubscriptionOwners": true,
+        "customEmails": []
+      }
+    },
+    {
+      "type": "microsoft.insights/components/ProactiveDetectionConfigs",
+      "apiVersion": "2018-05-01-preview",
+      "name": "[concat(parameters('components_MedicineOrderService_name'), '/extension_exceptionchangeextension')]",
+      "location": "southeastasia",
+      "dependsOn": [
+        "[resourceId('microsoft.insights/components', parameters('components_MedicineOrderService_name'))]"
+      ],
+      "properties": {
+        "ruleDefinitions": {
+          "Name": "extension_exceptionchangeextension",
+          "DisplayName": "Abnormal rise in exception volume (preview)",
+          "Description": "This detection rule automatically analyzes the exceptions thrown in your application, and can warn you about unusual patterns in your exception telemetry.",
+          "HelpUrl": "https://github.com/Microsoft/ApplicationInsights-Home/blob/master/SmartDetection/abnormal-rise-in-exception-volume.md",
+          "IsHidden": false,
+          "IsEnabledByDefault": true,
+          "IsInPreview": true,
+          "SupportsEmailNotifications": false
+        },
+        "enabled": true,
+        "sendEmailsToSubscriptionOwners": true,
+        "customEmails": []
+      }
+    },
+    {
+      "type": "microsoft.insights/components/ProactiveDetectionConfigs",
+      "apiVersion": "2018-05-01-preview",
+      "name": "[concat(parameters('components_MedicineOrderService_name'), '/extension_memoryleakextension')]",
+      "location": "southeastasia",
+      "dependsOn": [
+        "[resourceId('microsoft.insights/components', parameters('components_MedicineOrderService_name'))]"
+      ],
+      "properties": {
+        "ruleDefinitions": {
+          "Name": "extension_memoryleakextension",
+          "DisplayName": "Potential memory leak detected (preview)",
+          "Description": "This detection rule automatically analyzes the memory consumption of each process in your application, and can warn you about potential memory leaks or increased memory consumption.",
+          "HelpUrl": "https://github.com/Microsoft/ApplicationInsights-Home/tree/master/SmartDetection/memory-leak.md",
+          "IsHidden": false,
+          "IsEnabledByDefault": true,
+          "IsInPreview": true,
+          "SupportsEmailNotifications": false
+        },
+        "enabled": true,
+        "sendEmailsToSubscriptionOwners": true,
+        "customEmails": []
+      }
+    },
+    {
+      "type": "microsoft.insights/components/ProactiveDetectionConfigs",
+      "apiVersion": "2018-05-01-preview",
+      "name": "[concat(parameters('components_MedicineOrderService_name'), '/extension_securityextensionspackage')]",
+      "location": "southeastasia",
+      "dependsOn": [
+        "[resourceId('microsoft.insights/components', parameters('components_MedicineOrderService_name'))]"
+      ],
+      "properties": {
+        "ruleDefinitions": {
+          "Name": "extension_securityextensionspackage",
+          "DisplayName": "Potential security issue detected (preview)",
+          "Description": "This detection rule automatically analyzes the telemetry generated by your application and detects potential security issues.",
+          "HelpUrl": "https://github.com/Microsoft/ApplicationInsights-Home/blob/master/SmartDetection/application-security-detection-pack.md",
+          "IsHidden": false,
+          "IsEnabledByDefault": true,
+          "IsInPreview": true,
+          "SupportsEmailNotifications": false
+        },
+        "enabled": true,
+        "sendEmailsToSubscriptionOwners": true,
+        "customEmails": []
+      }
+    },
+    {
+      "type": "microsoft.insights/components/ProactiveDetectionConfigs",
+      "apiVersion": "2018-05-01-preview",
+      "name": "[concat(parameters('components_MedicineOrderService_name'), '/extension_traceseveritydetector')]",
+      "location": "southeastasia",
+      "dependsOn": [
+        "[resourceId('microsoft.insights/components', parameters('components_MedicineOrderService_name'))]"
+      ],
+      "properties": {
+        "ruleDefinitions": {
+          "Name": "extension_traceseveritydetector",
+          "DisplayName": "Degradation in trace severity ratio (preview)",
+          "Description": "This detection rule automatically analyzes the trace logs emitted from your application, and can warn you about unusual patterns in the severity of your trace telemetry.",
+          "HelpUrl": "https://github.com/Microsoft/ApplicationInsights-Home/blob/master/SmartDetection/degradation-in-trace-severity-ratio.md",
+          "IsHidden": false,
+          "IsEnabledByDefault": true,
+          "IsInPreview": true,
+          "SupportsEmailNotifications": false
+        },
+        "enabled": true,
+        "sendEmailsToSubscriptionOwners": true,
+        "customEmails": []
+      }
+    },
+    {
+      "type": "microsoft.insights/components/ProactiveDetectionConfigs",
+      "apiVersion": "2018-05-01-preview",
+      "name": "[concat(parameters('components_MedicineOrderService_name'), '/longdependencyduration')]",
+      "location": "southeastasia",
+      "dependsOn": [
+        "[resourceId('microsoft.insights/components', parameters('components_MedicineOrderService_name'))]"
+      ],
+      "properties": {
+        "ruleDefinitions": {
+          "Name": "longdependencyduration",
+          "DisplayName": "Long dependency duration",
+          "Description": "Smart Detection rules notify you of performance anomaly issues.",
+          "HelpUrl": "https://docs.microsoft.com/en-us/azure/application-insights/app-insights-proactive-performance-diagnostics",
+          "IsHidden": false,
+          "IsEnabledByDefault": true,
+          "IsInPreview": false,
+          "SupportsEmailNotifications": true
+        },
+        "enabled": true,
+        "sendEmailsToSubscriptionOwners": true,
+        "customEmails": []
+      }
+    },
+    {
+      "type": "microsoft.insights/components/ProactiveDetectionConfigs",
+      "apiVersion": "2018-05-01-preview",
+      "name": "[concat(parameters('components_MedicineOrderService_name'), '/migrationToAlertRulesCompleted')]",
+      "location": "southeastasia",
+      "dependsOn": [
+        "[resourceId('microsoft.insights/components', parameters('components_MedicineOrderService_name'))]"
+      ],
+      "properties": {
+        "ruleDefinitions": {
+          "Name": "migrationToAlertRulesCompleted",
+          "DisplayName": "Migration To Alert Rules Completed",
+          "Description": "A configuration that controls the migration state of Smart Detection to Smart Alerts",
+          "HelpUrl": "https://docs.microsoft.com/en-us/azure/application-insights/app-insights-proactive-performance-diagnostics",
+          "IsHidden": true,
+          "IsEnabledByDefault": false,
+          "IsInPreview": true,
+          "SupportsEmailNotifications": false
+        },
+        "enabled": false,
+        "sendEmailsToSubscriptionOwners": true,
+        "customEmails": []
+      }
+    },
+    {
+      "type": "microsoft.insights/components/ProactiveDetectionConfigs",
+      "apiVersion": "2018-05-01-preview",
+      "name": "[concat(parameters('components_MedicineOrderService_name'), '/slowpageloadtime')]",
+      "location": "southeastasia",
+      "dependsOn": [
+        "[resourceId('microsoft.insights/components', parameters('components_MedicineOrderService_name'))]"
+      ],
+      "properties": {
+        "ruleDefinitions": {
+          "Name": "slowpageloadtime",
+          "DisplayName": "Slow page load time",
+          "Description": "Smart Detection rules notify you of performance anomaly issues.",
+          "HelpUrl": "https://docs.microsoft.com/en-us/azure/application-insights/app-insights-proactive-performance-diagnostics",
+          "IsHidden": false,
+          "IsEnabledByDefault": true,
+          "IsInPreview": false,
+          "SupportsEmailNotifications": true
+        },
+        "enabled": true,
+        "sendEmailsToSubscriptionOwners": true,
+        "customEmails": []
+      }
+    },
+    {
+      "type": "microsoft.insights/components/ProactiveDetectionConfigs",
+      "apiVersion": "2018-05-01-preview",
+      "name": "[concat(parameters('components_MedicineOrderService_name'), '/slowserverresponsetime')]",
+      "location": "southeastasia",
+      "dependsOn": [
+        "[resourceId('microsoft.insights/components', parameters('components_MedicineOrderService_name'))]"
+      ],
+      "properties": {
+        "ruleDefinitions": {
+          "Name": "slowserverresponsetime",
+          "DisplayName": "Slow server response time",
+          "Description": "Smart Detection rules notify you of performance anomaly issues.",
+          "HelpUrl": "https://docs.microsoft.com/en-us/azure/application-insights/app-insights-proactive-performance-diagnostics",
+          "IsHidden": false,
+          "IsEnabledByDefault": true,
+          "IsInPreview": false,
+          "SupportsEmailNotifications": true
+        },
+        "enabled": true,
+        "sendEmailsToSubscriptionOwners": true,
+        "customEmails": []
+      }
+    },
+    {
+      "type": "Microsoft.Sql/servers/advancedThreatProtectionSettings",
+      "apiVersion": "2023-05-01-preview",
+      "name": "[concat(parameters('servers_medicineorderdbserver_name'), '/Default')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Sql/servers', parameters('servers_medicineorderdbserver_name'))]"
+      ],
+      "properties": {
+        "state": "Disabled"
+      }
+    },
+    {
+      "type": "Microsoft.Sql/servers/advisors",
+      "apiVersion": "2014-04-01",
+      "name": "[concat(parameters('servers_medicineorderdbserver_name'), '/CreateIndex')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Sql/servers', parameters('servers_medicineorderdbserver_name'))]"
+      ],
+      "properties": {
+        "autoExecuteValue": "Disabled"
+      }
+    },
+    {
+      "type": "Microsoft.Sql/servers/advisors",
+      "apiVersion": "2014-04-01",
+      "name": "[concat(parameters('servers_medicineorderdbserver_name'), '/DbParameterization')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Sql/servers', parameters('servers_medicineorderdbserver_name'))]"
+      ],
+      "properties": {
+        "autoExecuteValue": "Disabled"
+      }
+    },
+    {
+      "type": "Microsoft.Sql/servers/advisors",
+      "apiVersion": "2014-04-01",
+      "name": "[concat(parameters('servers_medicineorderdbserver_name'), '/DefragmentIndex')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Sql/servers', parameters('servers_medicineorderdbserver_name'))]"
+      ],
+      "properties": {
+        "autoExecuteValue": "Disabled"
+      }
+    },
+    {
+      "type": "Microsoft.Sql/servers/advisors",
+      "apiVersion": "2014-04-01",
+      "name": "[concat(parameters('servers_medicineorderdbserver_name'), '/DropIndex')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Sql/servers', parameters('servers_medicineorderdbserver_name'))]"
+      ],
+      "properties": {
+        "autoExecuteValue": "Disabled"
+      }
+    },
+    {
+      "type": "Microsoft.Sql/servers/advisors",
+      "apiVersion": "2014-04-01",
+      "name": "[concat(parameters('servers_medicineorderdbserver_name'), '/ForceLastGoodPlan')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Sql/servers', parameters('servers_medicineorderdbserver_name'))]"
+      ],
+      "properties": {
+        "autoExecuteValue": "Enabled"
+      }
+    },
+    {
+      "type": "Microsoft.Sql/servers/auditingPolicies",
+      "apiVersion": "2014-04-01",
+      "name": "[concat(parameters('servers_medicineorderdbserver_name'), '/Default')]",
+      "location": "Southeast Asia",
+      "dependsOn": [
+        "[resourceId('Microsoft.Sql/servers', parameters('servers_medicineorderdbserver_name'))]"
+      ],
+      "properties": {
+        "auditingState": "Disabled"
+      }
+    },
+    {
+      "type": "Microsoft.Sql/servers/auditingSettings",
+      "apiVersion": "2023-05-01-preview",
+      "name": "[concat(parameters('servers_medicineorderdbserver_name'), '/Default')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Sql/servers', parameters('servers_medicineorderdbserver_name'))]"
+      ],
+      "properties": {
+        "retentionDays": 0,
+        "auditActionsAndGroups": [],
+        "isStorageSecondaryKeyInUse": false,
+        "isAzureMonitorTargetEnabled": false,
+        "isManagedIdentityInUse": false,
+        "state": "Disabled",
+        "storageAccountSubscriptionId": "00000000-0000-0000-0000-000000000000"
+      }
+    },
+    {
+      "type": "Microsoft.Sql/servers/connectionPolicies",
+      "apiVersion": "2023-05-01-preview",
+      "name": "[concat(parameters('servers_medicineorderdbserver_name'), '/default')]",
+      "location": "southeastasia",
+      "dependsOn": [
+        "[resourceId('Microsoft.Sql/servers', parameters('servers_medicineorderdbserver_name'))]"
+      ],
+      "properties": {
+        "connectionType": "Default"
+      }
+    },
+    {
+      "type": "Microsoft.Sql/servers/databases",
+      "apiVersion": "2023-05-01-preview",
+      "name": "[concat(parameters('servers_medicineorderdbserver_name'), '/MedicineOrderDB')]",
+      "location": "southeastasia",
+      "dependsOn": [
+        "[resourceId('Microsoft.Sql/servers', parameters('servers_medicineorderdbserver_name'))]"
+      ],
+      "sku": {
+        "name": "GP_S_Gen5",
+        "tier": "GeneralPurpose",
+        "family": "Gen5",
+        "capacity": 4
+      },
+      "kind": "v12.0,user,vcore,serverless,freelimit",
+      "properties": {
+        "collation": "SQL_Latin1_General_CP1_CI_AS",
+        "maxSizeBytes": 34359738368,
+        "catalogCollation": "SQL_Latin1_General_CP1_CI_AS",
+        "zoneRedundant": false,
+        "readScale": "Disabled",
+        "autoPauseDelay": 60,
+        "requestedBackupStorageRedundancy": "Local",
+        "minCapacity": 0.5,
+        "maintenanceConfigurationId": "/subscriptions/f3a37119-045d-40eb-a353-e7cc14948380/providers/Microsoft.Maintenance/publicMaintenanceConfigurations/SQL_Default",
+        "isLedgerOn": false,
+        "useFreeLimit": true,
+        "freeLimitExhaustionBehavior": "AutoPause",
+        "availabilityZone": "NoPreference"
+      }
+    },
+    {
+      "type": "Microsoft.Sql/servers/databases/advancedThreatProtectionSettings",
+      "apiVersion": "2023-05-01-preview",
+      "name": "[concat(parameters('servers_medicineorderdbserver_name'), '/master/Default')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Sql/servers', parameters('servers_medicineorderdbserver_name'))]"
+      ],
+      "properties": {
+        "state": "Disabled"
+      }
+    },
+    {
+      "type": "Microsoft.Sql/servers/databases/auditingPolicies",
+      "apiVersion": "2014-04-01",
+      "name": "[concat(parameters('servers_medicineorderdbserver_name'), '/master/Default')]",
+      "location": "Southeast Asia",
+      "dependsOn": [
+        "[resourceId('Microsoft.Sql/servers', parameters('servers_medicineorderdbserver_name'))]"
+      ],
+      "properties": {
+        "auditingState": "Disabled"
+      }
+    },
+    {
+      "type": "Microsoft.Sql/servers/databases/auditingSettings",
+      "apiVersion": "2023-05-01-preview",
+      "name": "[concat(parameters('servers_medicineorderdbserver_name'), '/master/Default')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Sql/servers', parameters('servers_medicineorderdbserver_name'))]"
+      ],
+      "properties": {
+        "retentionDays": 0,
+        "isAzureMonitorTargetEnabled": false,
+        "state": "Disabled",
+        "storageAccountSubscriptionId": "00000000-0000-0000-0000-000000000000"
+      }
+    },
+    {
+      "type": "Microsoft.Sql/servers/databases/extendedAuditingSettings",
+      "apiVersion": "2023-05-01-preview",
+      "name": "[concat(parameters('servers_medicineorderdbserver_name'), '/master/Default')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Sql/servers', parameters('servers_medicineorderdbserver_name'))]"
+      ],
+      "properties": {
+        "retentionDays": 0,
+        "isAzureMonitorTargetEnabled": false,
+        "state": "Disabled",
+        "storageAccountSubscriptionId": "00000000-0000-0000-0000-000000000000"
+      }
+    },
+    {
+      "type": "Microsoft.Sql/servers/databases/geoBackupPolicies",
+      "apiVersion": "2023-05-01-preview",
+      "name": "[concat(parameters('servers_medicineorderdbserver_name'), '/master/Default')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Sql/servers', parameters('servers_medicineorderdbserver_name'))]"
+      ],
+      "properties": {
+        "state": "Disabled"
+      }
+    },
+    {
+      "type": "Microsoft.Sql/servers/databases/ledgerDigestUploads",
+      "apiVersion": "2023-05-01-preview",
+      "name": "[concat(parameters('servers_medicineorderdbserver_name'), '/master/Current')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Sql/servers', parameters('servers_medicineorderdbserver_name'))]"
+      ],
+      "properties": {}
+    },
+    {
+      "type": "Microsoft.Sql/servers/databases/securityAlertPolicies",
+      "apiVersion": "2023-05-01-preview",
+      "name": "[concat(parameters('servers_medicineorderdbserver_name'), '/master/Default')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Sql/servers', parameters('servers_medicineorderdbserver_name'))]"
+      ],
+      "properties": {
+        "state": "Disabled",
+        "disabledAlerts": [
+          ""
+        ],
+        "emailAddresses": [
+          ""
+        ],
+        "emailAccountAdmins": false,
+        "retentionDays": 0
+      }
+    },
+    {
+      "type": "Microsoft.Sql/servers/databases/transparentDataEncryption",
+      "apiVersion": "2023-05-01-preview",
+      "name": "[concat(parameters('servers_medicineorderdbserver_name'), '/master/Current')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Sql/servers', parameters('servers_medicineorderdbserver_name'))]"
+      ],
+      "properties": {
+        "state": "Disabled"
+      }
+    },
+    {
+      "type": "Microsoft.Sql/servers/databases/vulnerabilityAssessments",
+      "apiVersion": "2023-05-01-preview",
+      "name": "[concat(parameters('servers_medicineorderdbserver_name'), '/master/Default')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Sql/servers', parameters('servers_medicineorderdbserver_name'))]"
+      ],
+      "properties": {
+        "recurringScans": {
+          "isEnabled": false,
+          "emailSubscriptionAdmins": true
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Sql/servers/devOpsAuditingSettings",
+      "apiVersion": "2023-05-01-preview",
+      "name": "[concat(parameters('servers_medicineorderdbserver_name'), '/Default')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Sql/servers', parameters('servers_medicineorderdbserver_name'))]"
+      ],
+      "properties": {
+        "isAzureMonitorTargetEnabled": false,
+        "isManagedIdentityInUse": false,
+        "state": "Disabled",
+        "storageAccountSubscriptionId": "00000000-0000-0000-0000-000000000000"
+      }
+    },
+    {
+      "type": "Microsoft.Sql/servers/encryptionProtector",
+      "apiVersion": "2023-05-01-preview",
+      "name": "[concat(parameters('servers_medicineorderdbserver_name'), '/current')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Sql/servers', parameters('servers_medicineorderdbserver_name'))]"
+      ],
+      "kind": "servicemanaged",
+      "properties": {
+        "serverKeyName": "ServiceManaged",
+        "serverKeyType": "ServiceManaged",
+        "autoRotationEnabled": false
+      }
+    },
+    {
+      "type": "Microsoft.Sql/servers/extendedAuditingSettings",
+      "apiVersion": "2023-05-01-preview",
+      "name": "[concat(parameters('servers_medicineorderdbserver_name'), '/Default')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Sql/servers', parameters('servers_medicineorderdbserver_name'))]"
+      ],
+      "properties": {
+        "retentionDays": 0,
+        "auditActionsAndGroups": [],
+        "isStorageSecondaryKeyInUse": false,
+        "isAzureMonitorTargetEnabled": false,
+        "isManagedIdentityInUse": false,
+        "state": "Disabled",
+        "storageAccountSubscriptionId": "00000000-0000-0000-0000-000000000000"
+      }
+    },
+    {
+      "type": "Microsoft.Sql/servers/firewallRules",
+      "apiVersion": "2023-05-01-preview",
+      "name": "[concat(parameters('servers_medicineorderdbserver_name'), '/AllowAllWindowsAzureIps')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Sql/servers', parameters('servers_medicineorderdbserver_name'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Sql/servers/firewallRules",
+      "apiVersion": "2023-05-01-preview",
+      "name": "[concat(parameters('servers_medicineorderdbserver_name'), '/ClientIp-2023-12-18_11-25-14')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Sql/servers', parameters('servers_medicineorderdbserver_name'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Sql/servers/keys",
+      "apiVersion": "2023-05-01-preview",
+      "name": "[concat(parameters('servers_medicineorderdbserver_name'), '/ServiceManaged')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Sql/servers', parameters('servers_medicineorderdbserver_name'))]"
+      ],
+      "kind": "servicemanaged",
+      "properties": {
+        "serverKeyType": "ServiceManaged"
+      }
+    },
+    {
+      "type": "Microsoft.Sql/servers/securityAlertPolicies",
+      "apiVersion": "2023-05-01-preview",
+      "name": "[concat(parameters('servers_medicineorderdbserver_name'), '/Default')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Sql/servers', parameters('servers_medicineorderdbserver_name'))]"
+      ],
+      "properties": {
+        "state": "Disabled",
+        "disabledAlerts": [
+          ""
+        ],
+        "emailAddresses": [
+          ""
+        ],
+        "emailAccountAdmins": false,
+        "retentionDays": 0
+      }
+    },
+    {
+      "type": "Microsoft.Sql/servers/sqlVulnerabilityAssessments",
+      "apiVersion": "2023-05-01-preview",
+      "name": "[concat(parameters('servers_medicineorderdbserver_name'), '/Default')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Sql/servers', parameters('servers_medicineorderdbserver_name'))]"
+      ],
+      "properties": {
+        "state": "Disabled"
+      }
+    },
+    {
+      "type": "Microsoft.Sql/servers/vulnerabilityAssessments",
+      "apiVersion": "2023-05-01-preview",
+      "name": "[concat(parameters('servers_medicineorderdbserver_name'), '/Default')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Sql/servers', parameters('servers_medicineorderdbserver_name'))]"
+      ],
+      "properties": {
+        "recurringScans": {
+          "isEnabled": false,
+          "emailSubscriptionAdmins": true
+        },
+        "storageContainerPath": "[parameters('vulnerabilityAssessments_Default_storageContainerPath')]"
+      }
+    },
+    {
+      "type": "Microsoft.Web/sites",
+      "apiVersion": "2023-01-01",
+      "name": "[parameters('sites_MedicineOrderService_name')]",
+      "location": "Southeast Asia",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/serverfarms', parameters('serverfarms_ASP_CloudMedicineOrderService_bd22_name'))]"
+      ],
+      "kind": "app",
+      "properties": {
+        "enabled": true,
+        "hostNameSslStates": [
+          {
+            "name": "medicineorderservice.azurewebsites.net",
+            "sslState": "Disabled",
+            "hostType": "Standard"
+          },
+          {
+            "name": "medicineorderservice.scm.azurewebsites.net",
+            "sslState": "Disabled",
+            "hostType": "Repository"
+          }
+        ],
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('serverfarms_ASP_CloudMedicineOrderService_bd22_name'))]",
+        "reserved": false,
+        "isXenon": false,
+        "hyperV": false,
+        "vnetRouteAllEnabled": false,
+        "vnetImagePullEnabled": false,
+        "vnetContentShareEnabled": false,
+        "siteConfig": {
+          "numberOfWorkers": 1,
+          "acrUseManagedIdentityCreds": false,
+          "alwaysOn": false,
+          "http20Enabled": false,
+          "functionAppScaleLimit": 0,
+          "minimumElasticInstanceCount": 0
+        },
+        "scmSiteAlsoStopped": false,
+        "clientAffinityEnabled": true,
+        "clientCertEnabled": false,
+        "clientCertMode": "Required",
+        "hostNamesDisabled": false,
+        "customDomainVerificationId": "E86AD794AD2AA718D504A0C2FDAE804CDC1FE68674DC1F28CCDDDE2E0DD77525",
+        "containerSize": 0,
+        "dailyMemoryTimeQuota": 0,
+        "httpsOnly": true,
+        "redundancyMode": "None",
+        "publicNetworkAccess": "Enabled",
+        "storageAccountRequired": false,
+        "keyVaultReferenceIdentity": "SystemAssigned"
+      }
+    },
+    {
+      "type": "Microsoft.Web/sites/basicPublishingCredentialsPolicies",
+      "apiVersion": "2023-01-01",
+      "name": "[concat(parameters('sites_MedicineOrderService_name'), '/ftp')]",
+      "location": "Southeast Asia",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', parameters('sites_MedicineOrderService_name'))]"
+      ],
+      "properties": {
+        "allow": true
+      }
+    },
+    {
+      "type": "Microsoft.Web/sites/basicPublishingCredentialsPolicies",
+      "apiVersion": "2023-01-01",
+      "name": "[concat(parameters('sites_MedicineOrderService_name'), '/scm')]",
+      "location": "Southeast Asia",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', parameters('sites_MedicineOrderService_name'))]"
+      ],
+      "properties": {
+        "allow": true
+      }
+    },
+    {
+      "type": "Microsoft.Web/sites/config",
+      "apiVersion": "2023-01-01",
+      "name": "[concat(parameters('sites_MedicineOrderService_name'), '/web')]",
+      "location": "Southeast Asia",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', parameters('sites_MedicineOrderService_name'))]"
+      ],
+      "properties": {
+        "numberOfWorkers": 1,
+        "defaultDocuments": [
+          "Default.htm",
+          "Default.html",
+          "Default.asp",
+          "index.htm",
+          "index.html",
+          "iisstart.htm",
+          "default.aspx",
+          "index.php",
+          "hostingstart.html"
+        ],
+        "netFrameworkVersion": "v6.0",
+        "requestTracingEnabled": false,
+        "remoteDebuggingEnabled": false,
+        "remoteDebuggingVersion": "VS2019",
+        "httpLoggingEnabled": false,
+        "acrUseManagedIdentityCreds": false,
+        "logsDirectorySizeLimit": 35,
+        "detailedErrorLoggingEnabled": false,
+        "publishingUsername": "$MedicineOrderService",
+        "scmType": "VSTSRM",
+        "use32BitWorkerProcess": true,
+        "webSocketsEnabled": false,
+        "alwaysOn": false,
+        "managedPipelineMode": "Integrated",
+        "virtualApplications": [
+          {
+            "virtualPath": "/",
+            "physicalPath": "site\\wwwroot",
+            "preloadEnabled": false
+          }
+        ],
+        "loadBalancing": "LeastRequests",
+        "experiments": {
+          "rampUpRules": []
+        },
+        "autoHealEnabled": false,
+        "vnetRouteAllEnabled": false,
+        "vnetPrivatePortsCount": 0,
+        "publicNetworkAccess": "Enabled",
+        "localMySqlEnabled": false,
+        "ipSecurityRestrictions": [
+          {
+            "ipAddress": "Any",
+            "action": "Allow",
+            "priority": 2147483647,
+            "name": "Allow all",
+            "description": "Allow all access"
+          }
+        ],
+        "scmIpSecurityRestrictions": [
+          {
+            "ipAddress": "Any",
+            "action": "Allow",
+            "priority": 2147483647,
+            "name": "Allow all",
+            "description": "Allow all access"
+          }
+        ],
+        "scmIpSecurityRestrictionsUseMain": false,
+        "http20Enabled": false,
+        "minTlsVersion": "1.2",
+        "scmMinTlsVersion": "1.2",
+        "ftpsState": "FtpsOnly",
+        "preWarmedInstanceCount": 0,
+        "elasticWebAppScaleLimit": 0,
+        "functionsRuntimeScaleMonitoringEnabled": false,
+        "minimumElasticInstanceCount": 0,
+        "azureStorageAccounts": {}
+      }
+    },
+    {
+      "type": "Microsoft.Web/sites/deployments",
+      "apiVersion": "2023-01-01",
+      "name": "[concat(parameters('sites_MedicineOrderService_name'), '/afaa5d2ca85b4694b2d011a6af8fd975')]",
+      "location": "Southeast Asia",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', parameters('sites_MedicineOrderService_name'))]"
+      ],
+      "properties": {
+        "status": 4,
+        "author_email": "N/A",
+        "author": "N/A",
+        "deployer": "VSTS",
+        "message": "{\"type\":\"deployment\",\"commitId\":\"832a1df6275e126e9319c347e7596cadae027dcd\",\"buildId\":\"89\",\"buildNumber\":\"20231218.9\",\"repoProvider\":\"TfsGit\",\"repoName\":\"DDD_Medicine_Order_Service\",\"collectionUrl\":\"https://dev.azure.com/diemkhang1912/\",\"teamProject\":\"ec125200-1f49-4153-a73f-839ae8abbdc0\",\"buildProjectUrl\":\"https://dev.azure.com/diemkhang1912/ec125200-1f49-4153-a73f-839ae8abbdc0\",\"repositoryUrl\":\"https://diemkhang1912@dev.azure.com/diemkhang1912/Cloud%20Medication%20Delivery%20System/_git/DDD_Medicine_Order_Service\",\"branch\":\"azure-pipelines\",\"teamProjectName\":\"Cloud Medication Delivery System\",\"slotName\":\"production\"}",
+        "start_time": "2023-12-18T03:44:29.8841341Z",
+        "end_time": "2023-12-18T03:44:30.2747812Z",
+        "active": true
+      }
+    },
+    {
+      "type": "Microsoft.Web/sites/hostNameBindings",
+      "apiVersion": "2023-01-01",
+      "name": "[concat(parameters('sites_MedicineOrderService_name'), '/', parameters('sites_MedicineOrderService_name'), '.azurewebsites.net')]",
+      "location": "Southeast Asia",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', parameters('sites_MedicineOrderService_name'))]"
+      ],
+      "properties": {
+        "siteName": "MedicineOrderService",
+        "hostNameType": "Verified"
+      }
+    },
+    {
+      "type": "Microsoft.Web/sites/snapshots",
+      "apiVersion": "2015-08-01",
+      "name": "[concat(parameters('sites_MedicineOrderService_name'), '/2023-12-17T18_10_45_1277397')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', parameters('sites_MedicineOrderService_name'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Web/sites/snapshots",
+      "apiVersion": "2015-08-01",
+      "name": "[concat(parameters('sites_MedicineOrderService_name'), '/2023-12-17T19_10_45_1964768')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', parameters('sites_MedicineOrderService_name'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Web/sites/snapshots",
+      "apiVersion": "2015-08-01",
+      "name": "[concat(parameters('sites_MedicineOrderService_name'), '/2023-12-17T20_10_45_2642500')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', parameters('sites_MedicineOrderService_name'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Web/sites/snapshots",
+      "apiVersion": "2015-08-01",
+      "name": "[concat(parameters('sites_MedicineOrderService_name'), '/2023-12-17T21_10_45_3288154')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', parameters('sites_MedicineOrderService_name'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Web/sites/snapshots",
+      "apiVersion": "2015-08-01",
+      "name": "[concat(parameters('sites_MedicineOrderService_name'), '/2023-12-17T22_10_45_3840651')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', parameters('sites_MedicineOrderService_name'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Web/sites/snapshots",
+      "apiVersion": "2015-08-01",
+      "name": "[concat(parameters('sites_MedicineOrderService_name'), '/2023-12-17T23_10_45_4696358')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', parameters('sites_MedicineOrderService_name'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Web/sites/snapshots",
+      "apiVersion": "2015-08-01",
+      "name": "[concat(parameters('sites_MedicineOrderService_name'), '/2023-12-18T00_10_45_5240418')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', parameters('sites_MedicineOrderService_name'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Web/sites/snapshots",
+      "apiVersion": "2015-08-01",
+      "name": "[concat(parameters('sites_MedicineOrderService_name'), '/2023-12-18T01_10_45_5995255')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', parameters('sites_MedicineOrderService_name'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Web/sites/snapshots",
+      "apiVersion": "2015-08-01",
+      "name": "[concat(parameters('sites_MedicineOrderService_name'), '/2023-12-18T02_10_45_6552945')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', parameters('sites_MedicineOrderService_name'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Web/sites/snapshots",
+      "apiVersion": "2015-08-01",
+      "name": "[concat(parameters('sites_MedicineOrderService_name'), '/2023-12-18T03_10_45_7420936')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', parameters('sites_MedicineOrderService_name'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Web/sites/snapshots",
+      "apiVersion": "2015-08-01",
+      "name": "[concat(parameters('sites_MedicineOrderService_name'), '/2023-12-18T04_10_45_7699059')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', parameters('sites_MedicineOrderService_name'))]"
+      ]
+    },
+    {
+      "type": "microsoft.alertsmanagement/smartdetectoralertrules",
+      "apiVersion": "2021-04-01",
+      "name": "[parameters('smartdetectoralertrules_failure_anomalies___medicineorderservice_name')]",
+      "location": "global",
+      "dependsOn": [
+        "[resourceId('microsoft.insights/components', parameters('components_MedicineOrderService_name'))]",
+        "[resourceId('microsoft.insights/actionGroups', parameters('actionGroups_Application_Insights_Smart_Detection_name'))]"
+      ],
+      "properties": {
+        "description": "Failure Anomalies notifies you of an unusual rise in the rate of failed HTTP requests or dependency calls.",
+        "state": "Enabled",
+        "severity": "Sev3",
+        "frequency": "PT1M",
+        "detector": {
+          "id": "FailureAnomaliesDetector"
+        },
+        "scope": [
+          "[resourceId('microsoft.insights/components', parameters('components_MedicineOrderService_name'))]"
+        ],
+        "actionGroups": {
+          "groupIds": [
+            "[resourceId('microsoft.insights/actionGroups', parameters('actionGroups_Application_Insights_Smart_Detection_name'))]"
+          ]
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Sql/servers/databases/advancedThreatProtectionSettings",
+      "apiVersion": "2023-05-01-preview",
+      "name": "[concat(parameters('servers_medicineorderdbserver_name'), '/MedicineOrderDB/Default')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Sql/servers/databases', parameters('servers_medicineorderdbserver_name'), 'MedicineOrderDB')]",
+        "[resourceId('Microsoft.Sql/servers', parameters('servers_medicineorderdbserver_name'))]"
+      ],
+      "properties": {
+        "state": "Disabled"
+      }
+    },
+    {
+      "type": "Microsoft.Sql/servers/databases/advisors",
+      "apiVersion": "2014-04-01",
+      "name": "[concat(parameters('servers_medicineorderdbserver_name'), '/MedicineOrderDB/CreateIndex')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Sql/servers/databases', parameters('servers_medicineorderdbserver_name'), 'MedicineOrderDB')]",
+        "[resourceId('Microsoft.Sql/servers', parameters('servers_medicineorderdbserver_name'))]"
+      ],
+      "properties": {
+        "autoExecuteValue": "Disabled"
+      }
+    },
+    {
+      "type": "Microsoft.Sql/servers/databases/advisors",
+      "apiVersion": "2014-04-01",
+      "name": "[concat(parameters('servers_medicineorderdbserver_name'), '/MedicineOrderDB/DbParameterization')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Sql/servers/databases', parameters('servers_medicineorderdbserver_name'), 'MedicineOrderDB')]",
+        "[resourceId('Microsoft.Sql/servers', parameters('servers_medicineorderdbserver_name'))]"
+      ],
+      "properties": {
+        "autoExecuteValue": "Disabled"
+      }
+    },
+    {
+      "type": "Microsoft.Sql/servers/databases/advisors",
+      "apiVersion": "2014-04-01",
+      "name": "[concat(parameters('servers_medicineorderdbserver_name'), '/MedicineOrderDB/DefragmentIndex')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Sql/servers/databases', parameters('servers_medicineorderdbserver_name'), 'MedicineOrderDB')]",
+        "[resourceId('Microsoft.Sql/servers', parameters('servers_medicineorderdbserver_name'))]"
+      ],
+      "properties": {
+        "autoExecuteValue": "Disabled"
+      }
+    },
+    {
+      "type": "Microsoft.Sql/servers/databases/advisors",
+      "apiVersion": "2014-04-01",
+      "name": "[concat(parameters('servers_medicineorderdbserver_name'), '/MedicineOrderDB/DropIndex')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Sql/servers/databases', parameters('servers_medicineorderdbserver_name'), 'MedicineOrderDB')]",
+        "[resourceId('Microsoft.Sql/servers', parameters('servers_medicineorderdbserver_name'))]"
+      ],
+      "properties": {
+        "autoExecuteValue": "Disabled"
+      }
+    },
+    {
+      "type": "Microsoft.Sql/servers/databases/advisors",
+      "apiVersion": "2014-04-01",
+      "name": "[concat(parameters('servers_medicineorderdbserver_name'), '/MedicineOrderDB/ForceLastGoodPlan')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Sql/servers/databases', parameters('servers_medicineorderdbserver_name'), 'MedicineOrderDB')]",
+        "[resourceId('Microsoft.Sql/servers', parameters('servers_medicineorderdbserver_name'))]"
+      ],
+      "properties": {
+        "autoExecuteValue": "Enabled"
+      }
+    },
+    {
+      "type": "Microsoft.Sql/servers/databases/auditingPolicies",
+      "apiVersion": "2014-04-01",
+      "name": "[concat(parameters('servers_medicineorderdbserver_name'), '/MedicineOrderDB/Default')]",
+      "location": "Southeast Asia",
+      "dependsOn": [
+        "[resourceId('Microsoft.Sql/servers/databases', parameters('servers_medicineorderdbserver_name'), 'MedicineOrderDB')]",
+        "[resourceId('Microsoft.Sql/servers', parameters('servers_medicineorderdbserver_name'))]"
+      ],
+      "properties": {
+        "auditingState": "Disabled"
+      }
+    },
+    {
+      "type": "Microsoft.Sql/servers/databases/auditingSettings",
+      "apiVersion": "2023-05-01-preview",
+      "name": "[concat(parameters('servers_medicineorderdbserver_name'), '/MedicineOrderDB/Default')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Sql/servers/databases', parameters('servers_medicineorderdbserver_name'), 'MedicineOrderDB')]",
+        "[resourceId('Microsoft.Sql/servers', parameters('servers_medicineorderdbserver_name'))]"
+      ],
+      "properties": {
+        "retentionDays": 0,
+        "isAzureMonitorTargetEnabled": false,
+        "state": "Disabled",
+        "storageAccountSubscriptionId": "00000000-0000-0000-0000-000000000000"
+      }
+    },
+    {
+      "type": "Microsoft.Sql/servers/databases/backupLongTermRetentionPolicies",
+      "apiVersion": "2023-05-01-preview",
+      "name": "[concat(parameters('servers_medicineorderdbserver_name'), '/MedicineOrderDB/default')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Sql/servers/databases', parameters('servers_medicineorderdbserver_name'), 'MedicineOrderDB')]",
+        "[resourceId('Microsoft.Sql/servers', parameters('servers_medicineorderdbserver_name'))]"
+      ],
+      "properties": {
+        "weeklyRetention": "PT0S",
+        "monthlyRetention": "PT0S",
+        "yearlyRetention": "PT0S",
+        "weekOfYear": 0
+      }
+    },
+    {
+      "type": "Microsoft.Sql/servers/databases/backupShortTermRetentionPolicies",
+      "apiVersion": "2023-05-01-preview",
+      "name": "[concat(parameters('servers_medicineorderdbserver_name'), '/MedicineOrderDB/default')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Sql/servers/databases', parameters('servers_medicineorderdbserver_name'), 'MedicineOrderDB')]",
+        "[resourceId('Microsoft.Sql/servers', parameters('servers_medicineorderdbserver_name'))]"
+      ],
+      "properties": {
+        "retentionDays": 7,
+        "diffBackupIntervalInHours": 12
+      }
+    },
+    {
+      "type": "Microsoft.Sql/servers/databases/extendedAuditingSettings",
+      "apiVersion": "2023-05-01-preview",
+      "name": "[concat(parameters('servers_medicineorderdbserver_name'), '/MedicineOrderDB/Default')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Sql/servers/databases', parameters('servers_medicineorderdbserver_name'), 'MedicineOrderDB')]",
+        "[resourceId('Microsoft.Sql/servers', parameters('servers_medicineorderdbserver_name'))]"
+      ],
+      "properties": {
+        "retentionDays": 0,
+        "isAzureMonitorTargetEnabled": false,
+        "state": "Disabled",
+        "storageAccountSubscriptionId": "00000000-0000-0000-0000-000000000000"
+      }
+    },
+    {
+      "type": "Microsoft.Sql/servers/databases/geoBackupPolicies",
+      "apiVersion": "2023-05-01-preview",
+      "name": "[concat(parameters('servers_medicineorderdbserver_name'), '/MedicineOrderDB/Default')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Sql/servers/databases', parameters('servers_medicineorderdbserver_name'), 'MedicineOrderDB')]",
+        "[resourceId('Microsoft.Sql/servers', parameters('servers_medicineorderdbserver_name'))]"
+      ],
+      "properties": {
+        "state": "Disabled"
+      }
+    },
+    {
+      "type": "Microsoft.Sql/servers/databases/ledgerDigestUploads",
+      "apiVersion": "2023-05-01-preview",
+      "name": "[concat(parameters('servers_medicineorderdbserver_name'), '/MedicineOrderDB/Current')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Sql/servers/databases', parameters('servers_medicineorderdbserver_name'), 'MedicineOrderDB')]",
+        "[resourceId('Microsoft.Sql/servers', parameters('servers_medicineorderdbserver_name'))]"
+      ],
+      "properties": {}
+    },
+    {
+      "type": "Microsoft.Sql/servers/databases/securityAlertPolicies",
+      "apiVersion": "2023-05-01-preview",
+      "name": "[concat(parameters('servers_medicineorderdbserver_name'), '/MedicineOrderDB/Default')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Sql/servers/databases', parameters('servers_medicineorderdbserver_name'), 'MedicineOrderDB')]",
+        "[resourceId('Microsoft.Sql/servers', parameters('servers_medicineorderdbserver_name'))]"
+      ],
+      "properties": {
+        "state": "Disabled",
+        "disabledAlerts": [
+          ""
+        ],
+        "emailAddresses": [
+          ""
+        ],
+        "emailAccountAdmins": false,
+        "retentionDays": 0
+      }
+    },
+    {
+      "type": "Microsoft.Sql/servers/databases/transparentDataEncryption",
+      "apiVersion": "2023-05-01-preview",
+      "name": "[concat(parameters('servers_medicineorderdbserver_name'), '/MedicineOrderDB/Current')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Sql/servers/databases', parameters('servers_medicineorderdbserver_name'), 'MedicineOrderDB')]",
+        "[resourceId('Microsoft.Sql/servers', parameters('servers_medicineorderdbserver_name'))]"
+      ],
+      "properties": {
+        "state": "Enabled"
+      }
+    },
+    {
+      "type": "Microsoft.Sql/servers/databases/vulnerabilityAssessments",
+      "apiVersion": "2023-05-01-preview",
+      "name": "[concat(parameters('servers_medicineorderdbserver_name'), '/MedicineOrderDB/Default')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Sql/servers/databases', parameters('servers_medicineorderdbserver_name'), 'MedicineOrderDB')]",
+        "[resourceId('Microsoft.Sql/servers', parameters('servers_medicineorderdbserver_name'))]"
+      ],
+      "properties": {
+        "recurringScans": {
+          "isEnabled": false,
+          "emailSubscriptionAdmins": true
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Web/sites/slots",
+      "apiVersion": "2023-01-01",
+      "name": "[concat(parameters('sites_MedicineOrderService_name'), '/dev')]",
+      "location": "Southeast Asia",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', parameters('sites_MedicineOrderService_name'))]",
+        "[resourceId('Microsoft.Web/serverfarms', parameters('serverfarms_ASP_CloudMedicineOrderService_bd22_name'))]"
+      ],
+      "kind": "app",
+      "properties": {
+        "enabled": true,
+        "hostNameSslStates": [
+          {
+            "name": "medicineorderservice-dev.azurewebsites.net",
+            "sslState": "Disabled",
+            "hostType": "Standard"
+          },
+          {
+            "name": "medicineorderservice-dev.scm.azurewebsites.net",
+            "sslState": "Disabled",
+            "hostType": "Repository"
+          }
+        ],
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('serverfarms_ASP_CloudMedicineOrderService_bd22_name'))]",
+        "reserved": false,
+        "isXenon": false,
+        "hyperV": false,
+        "vnetRouteAllEnabled": false,
+        "vnetImagePullEnabled": false,
+        "vnetContentShareEnabled": false,
+        "siteConfig": {
+          "numberOfWorkers": 1,
+          "acrUseManagedIdentityCreds": false,
+          "alwaysOn": false,
+          "http20Enabled": false,
+          "functionAppScaleLimit": 0,
+          "minimumElasticInstanceCount": 0
+        },
+        "scmSiteAlsoStopped": false,
+        "clientAffinityEnabled": true,
+        "clientCertEnabled": false,
+        "clientCertMode": "Required",
+        "hostNamesDisabled": false,
+        "customDomainVerificationId": "E86AD794AD2AA718D504A0C2FDAE804CDC1FE68674DC1F28CCDDDE2E0DD77525",
+        "containerSize": 0,
+        "dailyMemoryTimeQuota": 0,
+        "httpsOnly": true,
+        "redundancyMode": "None",
+        "publicNetworkAccess": "Enabled",
+        "storageAccountRequired": false,
+        "keyVaultReferenceIdentity": "SystemAssigned"
+      }
+    },
+    {
+      "type": "Microsoft.Web/sites/slots/basicPublishingCredentialsPolicies",
+      "apiVersion": "2023-01-01",
+      "name": "[concat(parameters('sites_MedicineOrderService_name'), '/dev/ftp')]",
+      "location": "Southeast Asia",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites/slots', parameters('sites_MedicineOrderService_name'), 'dev')]",
+        "[resourceId('Microsoft.Web/sites', parameters('sites_MedicineOrderService_name'))]"
+      ],
+      "properties": {
+        "allow": true
+      }
+    },
+    {
+      "type": "Microsoft.Web/sites/slots/basicPublishingCredentialsPolicies",
+      "apiVersion": "2023-01-01",
+      "name": "[concat(parameters('sites_MedicineOrderService_name'), '/dev/scm')]",
+      "location": "Southeast Asia",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites/slots', parameters('sites_MedicineOrderService_name'), 'dev')]",
+        "[resourceId('Microsoft.Web/sites', parameters('sites_MedicineOrderService_name'))]"
+      ],
+      "properties": {
+        "allow": true
+      }
+    },
+    {
+      "type": "Microsoft.Web/sites/slots/config",
+      "apiVersion": "2023-01-01",
+      "name": "[concat(parameters('sites_MedicineOrderService_name'), '/dev/web')]",
+      "location": "Southeast Asia",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites/slots', parameters('sites_MedicineOrderService_name'), 'dev')]",
+        "[resourceId('Microsoft.Web/sites', parameters('sites_MedicineOrderService_name'))]"
+      ],
+      "properties": {
+        "numberOfWorkers": 1,
+        "defaultDocuments": [
+          "Default.htm",
+          "Default.html",
+          "Default.asp",
+          "index.htm",
+          "index.html",
+          "iisstart.htm",
+          "default.aspx",
+          "index.php",
+          "hostingstart.html"
+        ],
+        "netFrameworkVersion": "v6.0",
+        "requestTracingEnabled": false,
+        "remoteDebuggingEnabled": false,
+        "remoteDebuggingVersion": "VS2019",
+        "httpLoggingEnabled": false,
+        "acrUseManagedIdentityCreds": false,
+        "logsDirectorySizeLimit": 35,
+        "detailedErrorLoggingEnabled": false,
+        "publishingUsername": "$medicineorderservice__dev",
+        "scmType": "VSTSRM",
+        "use32BitWorkerProcess": true,
+        "webSocketsEnabled": false,
+        "alwaysOn": false,
+        "managedPipelineMode": "Integrated",
+        "virtualApplications": [
+          {
+            "virtualPath": "/",
+            "physicalPath": "site\\wwwroot",
+            "preloadEnabled": false
+          }
+        ],
+        "loadBalancing": "LeastRequests",
+        "experiments": {
+          "rampUpRules": []
+        },
+        "autoHealEnabled": false,
+        "vnetRouteAllEnabled": false,
+        "vnetPrivatePortsCount": 0,
+        "publicNetworkAccess": "Enabled",
+        "localMySqlEnabled": false,
+        "ipSecurityRestrictions": [
+          {
+            "ipAddress": "Any",
+            "action": "Allow",
+            "priority": 2147483647,
+            "name": "Allow all",
+            "description": "Allow all access"
+          }
+        ],
+        "scmIpSecurityRestrictions": [
+          {
+            "ipAddress": "Any",
+            "action": "Allow",
+            "priority": 2147483647,
+            "name": "Allow all",
+            "description": "Allow all access"
+          }
+        ],
+        "scmIpSecurityRestrictionsUseMain": false,
+        "http20Enabled": false,
+        "minTlsVersion": "1.2",
+        "scmMinTlsVersion": "1.2",
+        "ftpsState": "FtpsOnly",
+        "preWarmedInstanceCount": 0,
+        "elasticWebAppScaleLimit": 0,
+        "functionsRuntimeScaleMonitoringEnabled": false,
+        "minimumElasticInstanceCount": 0,
+        "azureStorageAccounts": {}
+      }
+    },
+    {
+      "type": "Microsoft.Web/sites/slots/deployments",
+      "apiVersion": "2023-01-01",
+      "name": "[concat(parameters('sites_MedicineOrderService_name'), '/dev/177067f5bf8544489b91356fee93a7a1')]",
+      "location": "Southeast Asia",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites/slots', parameters('sites_MedicineOrderService_name'), 'dev')]",
+        "[resourceId('Microsoft.Web/sites', parameters('sites_MedicineOrderService_name'))]"
+      ],
+      "properties": {
+        "status": 4,
+        "author_email": "N/A",
+        "author": "N/A",
+        "deployer": "VSTS",
+        "message": "{\"type\":\"deployment\",\"commitId\":\"ef030258c2ca98427e65dfa8133b59b8be75b705\",\"buildId\":\"91\",\"buildNumber\":\"20231218.11\",\"repoProvider\":\"TfsGit\",\"repoName\":\"DDD_Medicine_Order_Service\",\"collectionUrl\":\"https://dev.azure.com/diemkhang1912/\",\"teamProject\":\"ec125200-1f49-4153-a73f-839ae8abbdc0\",\"buildProjectUrl\":\"https://dev.azure.com/diemkhang1912/ec125200-1f49-4153-a73f-839ae8abbdc0\",\"repositoryUrl\":\"https://diemkhang1912@dev.azure.com/diemkhang1912/Cloud%20Medication%20Delivery%20System/_git/DDD_Medicine_Order_Service\",\"branch\":\"azure-pipelines\",\"teamProjectName\":\"Cloud Medication Delivery System\",\"slotName\":\"dev\"}",
+        "start_time": "2023-12-18T04:04:08.0925018Z",
+        "end_time": "2023-12-18T04:04:08.5143933Z",
+        "active": false
+      }
+    },
+    {
+      "type": "Microsoft.Web/sites/slots/deployments",
+      "apiVersion": "2023-01-01",
+      "name": "[concat(parameters('sites_MedicineOrderService_name'), '/dev/50608e13dfb3470eb793b2ea45d11419')]",
+      "location": "Southeast Asia",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites/slots', parameters('sites_MedicineOrderService_name'), 'dev')]",
+        "[resourceId('Microsoft.Web/sites', parameters('sites_MedicineOrderService_name'))]"
+      ],
+      "properties": {
+        "status": 4,
+        "author_email": "N/A",
+        "author": "N/A",
+        "deployer": "VSTS",
+        "message": "{\"type\":\"deployment\",\"commitId\":\"8eecea397474b7f5da800663dd018ffe4e8add36\",\"buildId\":\"92\",\"buildNumber\":\"20231218.12\",\"repoProvider\":\"TfsGit\",\"repoName\":\"DDD_Medicine_Order_Service\",\"collectionUrl\":\"https://dev.azure.com/diemkhang1912/\",\"teamProject\":\"ec125200-1f49-4153-a73f-839ae8abbdc0\",\"buildProjectUrl\":\"https://dev.azure.com/diemkhang1912/ec125200-1f49-4153-a73f-839ae8abbdc0\",\"repositoryUrl\":\"https://diemkhang1912@dev.azure.com/diemkhang1912/Cloud%20Medication%20Delivery%20System/_git/DDD_Medicine_Order_Service\",\"branch\":\"azure-pipelines\",\"teamProjectName\":\"Cloud Medication Delivery System\",\"slotName\":\"dev\"}",
+        "start_time": "2023-12-18T04:38:01.1585555Z",
+        "end_time": "2023-12-18T04:38:01.5648055Z",
+        "active": true
+      }
+    },
+    {
+      "type": "Microsoft.Web/sites/slots/hostNameBindings",
+      "apiVersion": "2023-01-01",
+      "name": "[concat(parameters('sites_MedicineOrderService_name'), '/dev/', parameters('sites_MedicineOrderService_name'), '-dev.azurewebsites.net')]",
+      "location": "Southeast Asia",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites/slots', parameters('sites_MedicineOrderService_name'), 'dev')]",
+        "[resourceId('Microsoft.Web/sites', parameters('sites_MedicineOrderService_name'))]"
+      ],
+      "properties": {
+        "siteName": "medicineorderservice(dev)",
+        "hostNameType": "Verified"
+      }
+    },
+    {
+      "type": "Microsoft.Web/sites/slots/snapshots",
+      "apiVersion": "2015-08-01",
+      "name": "[concat(parameters('sites_MedicineOrderService_name'), '/dev/2023-12-18T04_10_45_7699059')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites/slots', parameters('sites_MedicineOrderService_name'), 'dev')]",
+        "[resourceId('Microsoft.Web/sites', parameters('sites_MedicineOrderService_name'))]"
+      ]
+    }
+  ]
+}
